@@ -1,0 +1,48 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+interface Config {
+  port: number;
+  nodeEnv: string;
+  databaseUrl: string;
+  jwtSecret: string;
+  apiKey: string;
+}
+
+const requiredEnvVars = [
+  'PORT',
+  'NODE_ENV',
+  'DATABASE_URL',
+  'JWT_SECRET',
+  'API_KEY'
+] as const;
+
+function validateEnvVars(): Config {
+  const missingVars: string[] = [];
+
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      missingVars.push(envVar);
+    }
+  }
+
+  if (missingVars.length > 0) {
+    console.error('❌ Missing required environment variables:');
+    missingVars.forEach(varName => {
+      console.error(`   - ${varName}`);
+    });
+    console.error('\nPlease check your .env file and ensure all required variables are set.');
+    process.exit(1);
+  }
+
+  return {
+    port: parseInt(process.env.PORT!, 10),
+    nodeEnv: process.env.NODE_ENV!,
+    databaseUrl: process.env.DATABASE_URL!,
+    jwtSecret: process.env.JWT_SECRET!,
+    apiKey: process.env.API_KEY!
+  };
+}
+
+export const config = validateEnvVars();
