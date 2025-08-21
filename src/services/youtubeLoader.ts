@@ -1,5 +1,6 @@
 import { OpenAIEmbeddings } from "@langchain/openai";
-import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
+import { YoutubeTranscript } from 'youtube-transcript';
+import { Document } from '@langchain/core/documents';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { config } from "../config";
 import { QdrantVectorStore } from "@langchain/qdrant";
@@ -68,32 +69,46 @@ class YouTubeLoaderService {
         });
       }
 
-      const loader = YoutubeLoader.createFromUrl(videoUrl, {
-        addVideoInfo: true,
+      // Get transcript from YouTube
+      const transcriptData = await YoutubeTranscript.fetchTranscript(videoUrl, {
+        // lang: language || 'en',
       });
 
-      const docs = await loader.load();
-
-      if (docs.length === 0) {
+      if (!transcriptData || transcriptData.length === 0) {
         return {
           success: false,
           error: 'No transcript available for this video'
         };
       }
 
-      // Extract video information from metadata
-      const firstDoc = docs[0];
+      // Convert transcript to text
+      const fullTranscript = transcriptData.map(item => item.text).join(' ');
+      
+      // Extract video ID for basic info
+      const videoId = this.extractVideoId(videoUrl);
       const videoInfo = {
-        title: firstDoc.metadata.title || 'Unknown Title',
-        author: firstDoc.metadata.author || 'Unknown Author',
-        length: firstDoc.metadata.length || 'Unknown Duration',
-        description: firstDoc.metadata.description || ''
+        title: `YouTube Video (${videoId})`,
+        author: 'Unknown Author',
+        length: 'Unknown Duration',
+        description: 'Transcript extracted from YouTube video'
       };
 
-      console.log(`📝 Video Info: ${videoInfo.title} by ${videoInfo.author} (${videoInfo.length})`);
+      console.log(`📝 Video Info: Transcript extracted for video ${videoId} (${transcriptData.length} segments)`);
 
-      // Split documents into chunks
-      const splitDocs = await this.textSplitter.splitDocuments(docs);
+      // Create document from transcript
+      const doc = new Document({
+        pageContent: fullTranscript,
+        metadata: {
+          source: videoUrl,
+          videoId: videoId,
+          segmentCount: transcriptData.length,
+          type: 'youtube_transcript',
+          ...videoInfo
+        }
+      });
+
+      // Split document into chunks
+      const splitDocs = await this.textSplitter.splitDocuments([doc]);
 
       if (splitDocs.length === 0) {
         return {
@@ -105,7 +120,7 @@ class YouTubeLoaderService {
       const collectionName = `youtube-${token}`;
       
       console.log(`🗄️ Creating vector store: ${collectionName}`);
-      console.log(`📊 Processing ${docs.length} documents into ${splitDocs.length} chunks`);
+      console.log(`📊 Processing 1 document into ${splitDocs.length} chunks`);
 
       await QdrantVectorStore.fromDocuments(
         splitDocs,
@@ -123,7 +138,7 @@ class YouTubeLoaderService {
       return {
         success: true,
         collectionName,
-        documentCount: docs.length,
+        documentCount: 1,
         chunkCount: splitDocs.length,
         videoInfo
       };
@@ -172,6 +187,21 @@ class YouTubeLoaderService {
       }
     } catch {
       return false;
+    }
+  }
+
+  private extractVideoId(url: string): string {
+    try {
+      const parsedUrl = new URL(url);
+      const hostname = parsedUrl.hostname.toLowerCase();
+      
+      if (hostname === 'youtu.be') {
+        return parsedUrl.pathname.slice(1); // Remove leading slash
+      } else {
+        return parsedUrl.searchParams.get('v') || 'unknown';
+      }
+    } catch {
+      return 'unknown';
     }
   }
 

@@ -74,7 +74,7 @@ export const createRateLimiter = ({ maxRequests, windowMs, endpointName }: RateL
 
 // Pre-configured rate limiters
 export const knowledgeBaseRateLimit = createRateLimiter({
-  maxRequests: 5,
+  maxRequests: 50,
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   endpointName: 'adding new knowlodge base'
 });
