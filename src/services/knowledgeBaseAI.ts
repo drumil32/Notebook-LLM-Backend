@@ -98,6 +98,7 @@ Be concise and accurate in your responses.`
         this.embeddings,
         {
           url: config.qdrantUrl,
+          apiKey: config.qdrantApiKey,
           collectionName: sourceInfo.collectionName,
         }
       );

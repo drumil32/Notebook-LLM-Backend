@@ -63,6 +63,7 @@ class TextLoaderService {
         this.embeddings, 
         {
           url: config.qdrantUrl,
+          apiKey: config.qdrantApiKey,
           collectionName,
         }
       );

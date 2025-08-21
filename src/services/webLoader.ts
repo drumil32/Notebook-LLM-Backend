@@ -206,6 +206,7 @@ class WebLoaderService {
         this.embeddings, 
         {
           url: config.qdrantUrl,
+          apiKey: config.qdrantApiKey,
           collectionName,
         }
       );

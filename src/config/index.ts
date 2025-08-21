@@ -9,6 +9,7 @@ interface Config {
   jwtSecret: string;
   redisUrl: string;
   qdrantUrl: string;
+  qdrantApiKey: string;
   openaiApiKey: string;
 }
 
@@ -47,6 +48,7 @@ function validateEnvVars(): Config {
     jwtSecret: process.env.JWT_SECRET!,
     redisUrl: process.env.REDIS_URL!,
     qdrantUrl: process.env.QDRANT_URL!,
+    qdrantApiKey: process.env.QDRANT_API_KEY!,
     openaiApiKey: process.env.OPENAI_API_KEY!
   };
 }
