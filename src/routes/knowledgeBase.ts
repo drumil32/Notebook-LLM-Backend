@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { knowledgeBaseController } from '../controllers/knowledgeBase';
+import { knowledgeBaseRateLimit, addRemainingCount } from '../middleware/rateLimiter';
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -20,7 +21,7 @@ const upload = multer({
   }
 });
 
-router.post('/', upload.single('file'), knowledgeBaseController.createKnowledgeBase);
+router.post('/', knowledgeBaseRateLimit, addRemainingCount, upload.single('file'), knowledgeBaseController.createKnowledgeBase);
 router.get('/:token', knowledgeBaseController.getKnowledgeBase);
 router.delete('/:token', knowledgeBaseController.deleteKnowledgeBase);
 router.get('/', knowledgeBaseController.listKnowledgeBases);
