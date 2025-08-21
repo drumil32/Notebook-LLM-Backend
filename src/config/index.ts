@@ -7,7 +7,9 @@ interface Config {
   nodeEnv: string;
   databaseUrl: string;
   jwtSecret: string;
-  apiKey: string;
+  redisUrl: string;
+  qdrantUrl: string;
+  openaiApiKey: string;
 }
 
 const requiredEnvVars = [
@@ -15,7 +17,9 @@ const requiredEnvVars = [
   'NODE_ENV',
   'DATABASE_URL',
   'JWT_SECRET',
-  'API_KEY'
+  'REDIS_URL',
+  'QDRANT_URL',
+  'OPENAI_API_KEY'
 ] as const;
 
 function validateEnvVars(): Config {
@@ -41,7 +45,9 @@ function validateEnvVars(): Config {
     nodeEnv: process.env.NODE_ENV!,
     databaseUrl: process.env.DATABASE_URL!,
     jwtSecret: process.env.JWT_SECRET!,
-    apiKey: process.env.API_KEY!
+    redisUrl: process.env.REDIS_URL!,
+    qdrantUrl: process.env.QDRANT_URL!,
+    openaiApiKey: process.env.OPENAI_API_KEY!
   };
 }
 
