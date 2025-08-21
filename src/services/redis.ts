@@ -106,6 +106,14 @@ class RedisService {
     return await this.keys(pattern);
   }
 
+  async ttl(key: string): Promise<number> {
+    if (!this.isConnected) {
+      throw new Error('Redis client is not connected');
+    }
+    
+    return await this.client.ttl(key);
+  }
+
   async flushAll(): Promise<void> {
     if (!this.isConnected) {
       throw new Error('Redis client is not connected');

@@ -1,71 +1,86 @@
-import rateLimit from 'express-rate-limit';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { redisService } from '../services/redis';
 
 interface RateLimiterConfig {
   maxRequests: number;
+  windowMs: number;
   endpointName: string;
 }
 
-export const createRateLimiter = ({ maxRequests, endpointName }: RateLimiterConfig) => {
-  return rateLimit({
-    windowMs: 24 * 60 * 60 * 1000, // 24 hours (1 day)
-    max: maxRequests,
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    keyGenerator: (req) => {
-      return req.ip || req.connection.remoteAddress || 'anonymous';
-    },
-    skip: (req) => {
+export const createRateLimiter = ({ maxRequests, windowMs, endpointName }: RateLimiterConfig) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Get IP address
       const ip = req.get('X-Real-IP') || 
-           req.get('X-Forwarded-For')?.split(',')[0]?.trim() || 
-           req.ip || 
-           req.connection.remoteAddress || 
-           'unknown';
-      return process.env.NODE_ENV === 'development' && (ip === '127.0.0.1' || ip === '::1');
-    },
-    handler: (req: Request, res: Response) => {
-      res.status(429).json({
-        success: false,
-        message: `Daily limit of ${maxRequests} ${endpointName} requests reached. Please try again tomorrow.`,
-        remainingRequests: 0,
-        resetTime: new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString()
-      });
-    },
-    // onLimitReached: (req: Request, res: Response) => {
-    //   console.log(`🚫 Rate limit reached for ${endpointName} from IP: ${req.ip}`);
-    // }
-  });
-};
+                 req.get('X-Forwarded-For')?.split(',')[0]?.trim() || 
+                 req.ip || 
+                 req.connection.remoteAddress || 
+                 'unknown';
 
-// Add middleware to inject remaining requests count
-export const addRemainingCount = (req: Request, res: Response, next: any) => {
-  const originalJson = res.json;
-  
-  res.json = function(data: any) {
-    // Get rate limit info from headers
-    const remaining = res.getHeader('RateLimit-Remaining');
-    const resetTime = res.getHeader('RateLimit-Reset');
-    
-    if (remaining !== undefined && data && typeof data === 'object') {
-      data.remainingRequests = parseInt(remaining as string);
-      if (resetTime) {
-        data.resetTime = new Date(parseInt(resetTime as string) * 1000).toISOString();
+      // Skip rate limiting for localhost in development
+      // if (process.env.NODE_ENV === 'development' && (ip === '127.0.0.1' || ip === '::1')) {
+      //   return next();
+      // }
+
+      const key = `rate_limit:${endpointName}:${ip}`;
+      const now = Date.now();
+      const windowStart = now - windowMs;
+
+      // Get current count for this IP
+      const currentCountStr = await redisService.get(key);
+      const currentCount = currentCountStr ? parseInt(currentCountStr) : 0;
+
+      if (currentCount >= maxRequests) {
+        // Rate limit exceeded
+        const ttl = await redisService.getClient().ttl(key);
+        const resetTime = new Date(now + (ttl * 1000)).toISOString();
+
+        return res.status(429).json({
+          success: false,
+          message: `Daily limit of ${maxRequests} ${endpointName} requests reached. Please try again tomorrow.`,
+          remainingRequests: 0,
+          resetTime
+        });
       }
+
+      // Increment counter
+      const newCount = currentCount + 1;
+      await redisService.set(key, newCount.toString(), Math.ceil(windowMs / 1000));
+
+      // Add remaining requests to response
+      const remainingRequests = maxRequests - newCount;
+      const resetTime = new Date(now + windowMs).toISOString();
+
+      // Modify res.json to include rate limit info
+      const originalJson = res.json;
+      res.json = function(data: any) {
+        if (data && typeof data === 'object') {
+          data.remainingRequests = remainingRequests;
+          data.resetTime = resetTime;
+        }
+        return originalJson.call(this, data);
+      };
+
+      console.log(`🔄 Rate limit check - IP: ${ip}, Count: ${newCount}/${maxRequests}, Remaining: ${remainingRequests}`);
+
+      next();
+    } catch (error) {
+      console.error('❌ Error in rate limiter:', error);
+      // On error, allow the request to proceed
+      next();
     }
-    
-    return originalJson.call(this, data);
   };
-  
-  next();
 };
 
 // Pre-configured rate limiters
 export const knowledgeBaseRateLimit = createRateLimiter({
   maxRequests: 5,
-  endpointName: 'knowledge base creation'
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  endpointName: 'adding new knowlodge base'
 });
 
 export const chatRateLimit = createRateLimiter({
   maxRequests: 30,
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours  
   endpointName: 'chat'
 });
