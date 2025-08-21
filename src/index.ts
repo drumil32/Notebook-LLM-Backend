@@ -6,6 +6,9 @@ import chatRoutes from './routes/chat';
 
 const app = express();
 
+// Trust proxy for proper IP detection (important for rate limiting)
+app.set('trust proxy', 'loopback');
+
 app.use(express.json());
 
 // Add middleware to log all requests
