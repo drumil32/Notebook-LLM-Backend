@@ -55,19 +55,6 @@ class KnowledgeBaseService {
   private readonly REDIS_KEY_PREFIX = 'knowledge_base:';
   private readonly TTL_SECONDS = 3600; // 1 hour
 
-  private static readonly MIME_TYPES: Record<string, string> = {
-    'pdf': 'application/pdf',
-    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'doc': 'application/msword',
-    'txt': 'text/plain',
-    'csv': 'text/csv',
-    'json': 'application/json'
-  };
-
-  private getMimeType(fileType: string): string {
-    return KnowledgeBaseService.MIME_TYPES[fileType.toLowerCase()] || 'application/octet-stream';
-  }
-
   async processKnowledgeBase(input: KnowledgeBaseInput): Promise<KnowledgeBaseResponse> {
     const validationErrors = this.validateInput(input);
 
@@ -82,7 +69,7 @@ class KnowledgeBaseService {
       const token = uuidv4();
       const now = new Date();
       const expiresAt = new Date(now.getTime() + this.TTL_SECONDS * 1000);
-      
+
       const knowledgeBaseData: KnowledgeBaseData = {
         token,
         text: input.text,
@@ -91,7 +78,10 @@ class KnowledgeBaseService {
         expiresAt: expiresAt.toISOString()
       };
 
-      // Process file if provided
+      // Process all inputs in parallel
+      const processingTasks = [];
+
+      // Setup file processing task
       if (input.file) {
         knowledgeBaseData.fileInfo = {
           filename: input.file.originalname,
@@ -99,87 +89,99 @@ class KnowledgeBaseService {
           mimetype: input.file.mimetype
         };
 
-        // Process PDF files
         if (input.file.mimetype === 'application/pdf') {
-          const pdfResult = await pdfLoaderService.processPDF(input.file.buffer, token);
-          
-          if (!pdfResult.success) {
-            return {
-              success: false,
-              errors: [{ field: 'file', message: pdfResult.error || 'Failed to process PDF' }]
-            };
-          }
-
-          knowledgeBaseData.fileInfo.collectionName = pdfResult.collectionName;
-          knowledgeBaseData.fileInfo.documentCount = pdfResult.documentCount;
+          processingTasks.push({
+            type: 'file',
+            task: pdfLoaderService.processPDF(input.file.buffer, token)
+          });
         }
       }
 
-      // Process text if provided
+      // Setup text processing task
       if (input.text) {
-        try {
-          console.log(`📝 Processing text input (${input.text.length} characters)`);
-          
-          const textResult = await textLoaderService.processText(input.text, token);
-          
-          if (!textResult.success) {
-            return {
-              success: false,
-              errors: [{ field: 'text', message: textResult.error || 'Failed to process text' }]
-            };
-          }
-
-          knowledgeBaseData.textInfo = {
-            collectionName: textResult.collectionName,
-            documentCount: textResult.documentCount,
-            chunkCount: textResult.chunkCount
-          };
-        } catch (error) {
-          console.error('❌ Error processing text:', error);
-          return {
-            success: false,
-            errors: [{ field: 'text', message: 'Failed to process text content' }]
-          };
-        }
+        console.log(`📝 Processing text input (${input.text.length} characters)`);
+        processingTasks.push({
+          type: 'text',
+          task: textLoaderService.processText(input.text, token)
+        });
       }
 
-      // Process link if provided
+      // Setup link processing task
       if (input.link) {
-        try {
-          console.log(`🔗 Processing link: ${input.link}`);
-          
-          // Determine crawl depth based on URL pattern or user preference
-          // For now, default to single page processing
-          const webOptions: WebProcessingOptions = {
-            crawlDepth: 'site',
-            maxPages: 10,
-            chunkSize: 1000,
-            chunkOverlap: 200
-          };
+        console.log(`🔗 Processing link: ${input.link}`);
+        const webOptions: WebProcessingOptions = {
+          crawlDepth: 'site',
+          maxPages: 10,
+          chunkSize: 1000,
+          chunkOverlap: 200
+        };
+        processingTasks.push({
+          type: 'link',
+          task: webLoaderService.processWebsite(input.link, token, webOptions),
+          options: webOptions
+        });
+      }
 
-          const webResult = await webLoaderService.processWebsite(input.link, token, webOptions);
-          
-          if (!webResult.success) {
+      // Execute all processing tasks in parallel
+      if (processingTasks.length > 0) {
+        console.log(`🚀 Starting parallel processing of ${processingTasks.length} tasks`);
+
+        const results = await Promise.allSettled(
+          processingTasks.map(task => task.task)
+        );
+
+        // Process results and handle errors
+        for (let i = 0; i < results.length; i++) {
+          const result = results[i];
+          const taskType = processingTasks[i].type;
+
+          if (result.status === 'rejected') {
+            console.error(`❌ ${taskType} processing failed:`, result.reason);
             return {
               success: false,
-              errors: [{ field: 'link', message: webResult.error || 'Failed to process website' }]
+              errors: [{ field: taskType, message: `Failed to process ${taskType}` }]
             };
           }
 
-          knowledgeBaseData.linkInfo = {
-            url: input.link,
-            collectionName: webResult.collectionName,
-            documentCount: webResult.documentCount,
-            chunkCount: webResult.chunkCount,
-            crawlDepth: webOptions.crawlDepth
-          };
-        } catch (error) {
-          console.error('❌ Error processing link:', error);
-          return {
-            success: false,
-            errors: [{ field: 'link', message: 'Failed to process website content' }]
-          };
+          const taskResult = result.value;
+          if (!taskResult.success) {
+            return {
+              success: false,
+              errors: [{ field: taskType, message: taskResult.error || `Failed to process ${taskType}` }]
+            };
+          }
+
+          // Update knowledgeBaseData based on task type
+          switch (taskType) {
+            case 'file':
+              if (knowledgeBaseData.fileInfo) {
+                knowledgeBaseData.fileInfo.collectionName = taskResult.collectionName;
+                knowledgeBaseData.fileInfo.documentCount = taskResult.documentCount;
+              }
+              break;
+
+            case 'text':
+              knowledgeBaseData.textInfo = {
+                collectionName: taskResult.collectionName,
+                documentCount: taskResult.documentCount,
+                chunkCount: taskResult.chunkCount
+              };
+              break;
+
+            case 'link':
+              const linkTask = processingTasks[i] as any;
+              knowledgeBaseData.linkInfo = {
+                url: input.link!,
+                collectionName: taskResult.collectionName,
+                documentCount: taskResult.documentCount,
+                chunkCount: taskResult.chunkCount,
+                crawlDepth: linkTask.options.crawlDepth
+              };
+              break;
+          }
         }
+
+        console.log(`✅ Parallel processing completed successfully`);
       }
 
       const redisKey = `${this.REDIS_KEY_PREFIX}${token}`;
@@ -272,7 +274,7 @@ class KnowledgeBaseService {
       }
 
       const parsedData = JSON.parse(data) as KnowledgeBaseData;
-      
+
       // Check if expired
       if (new Date() > new Date(parsedData.expiresAt)) {
         await this.deleteKnowledgeBase(token);
@@ -291,10 +293,10 @@ class KnowledgeBaseService {
     try {
       const redisKey = `${this.REDIS_KEY_PREFIX}${token}`;
       const data = await redisService.get(redisKey);
-      
+
       if (data) {
         const parsedData = JSON.parse(data) as KnowledgeBaseData;
-        
+
         // Clean up collections if they exist
         if (parsedData.fileInfo?.collectionName) {
           await pdfLoaderService.deleteCollection(token);
@@ -306,7 +308,7 @@ class KnowledgeBaseService {
           await textLoaderService.deleteCollection(token);
         }
       }
-      
+
       await redisService.del(redisKey);
       console.log(`🗑️ Knowledge base deleted: ${token}`);
       return true;

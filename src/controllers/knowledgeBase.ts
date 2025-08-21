@@ -4,7 +4,15 @@ import { knowledgeBaseService, KnowledgeBaseInput } from '../services/knowledgeB
 export class KnowledgeBaseController {
   async createKnowledgeBase(req: Request, res: Response): Promise<void> {
     try {
-      console.log('going to invocke processKnowledgeBase')
+      if (!req.body) {
+        res.status(400).json({
+          success: false,
+          message: 'Please provide data.'
+        });
+        return;
+      }
+
+      console.log(req.body)
       const { text, link } = req.body;
       const file = req.file;
 

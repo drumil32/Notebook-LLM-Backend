@@ -1,9 +1,17 @@
 import { Request, Response } from 'express';
-import { chatService } from '../services/chat';
+import { chatService } from '../services/chatService';
 
 export class ChatController {
   async chat(req: Request, res: Response): Promise<void> {
     try {
+      if (!req.body) {
+        res.status(400).json({
+          success: false,
+          message: 'Request body is required'
+        });
+        return;
+      }
+
       const { message, token } = req.body;
 
       if (!message || !token) {
@@ -14,22 +22,23 @@ export class ChatController {
         return;
       }
 
-      const result = await chatService.processChat(message, token);
+      const result = await chatService.processChat({ message, token });
 
       if (!result.success) {
-        res.status(404).json({
+        res.status(400).json({
           success: false,
-          message: result.error || 'Session expired or not found'
+          message: result.error || 'Failed to process chat'
         });
         return;
       }
 
       res.status(200).json({
         success: true,
-        message: 'Knowledge base found and logged'
+        message: result.message,
+        sessionId: result.sessionId
       });
     } catch (error) {
-      console.error('Error in chat:', error);
+      console.error('Error in chat controller:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error'

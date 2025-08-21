@@ -7,6 +7,7 @@ export interface PDFProcessingResult {
   success: boolean;
   collectionName?: string;
   documentCount?: number;
+  chunkCount?: number;
   error?: string;
 }
 
@@ -63,6 +64,7 @@ class PDFLoaderService {
       return {
         success: true,
         collectionName,
+        // chunkCount: vectorStore.chunkCount,
         documentCount: docs.length
       };
     } catch (error) {

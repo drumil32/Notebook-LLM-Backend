@@ -102,6 +102,10 @@ class RedisService {
     return await this.client.keys(pattern);
   }
 
+  async getKeys(pattern: string): Promise<string[]> {
+    return await this.keys(pattern);
+  }
+
   async flushAll(): Promise<void> {
     if (!this.isConnected) {
       throw new Error('Redis client is not connected');
