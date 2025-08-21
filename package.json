@@ -21,6 +21,7 @@
     "@langchain/textsplitters": "^0.1.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
     "multer": "^2.0.2",
     "openai": "^5.13.1",
     "pdf-parse": "^1.1.1",
