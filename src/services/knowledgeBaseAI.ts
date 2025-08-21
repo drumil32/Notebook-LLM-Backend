@@ -30,7 +30,11 @@ Be concise and accurate in your responses.`,
 
     website: `You are an AI assistant who provides answers based on the available context from website information. 
 You must stay strictly within the provided context. When answering user queries, always mention the source of the information.
-Be concise and accurate in your responses.`
+Be concise and accurate in your responses.`,
+
+    youtube: `You are an AI assistant who provides answers based on the available context from YouTube video transcripts. 
+You must stay strictly within the provided context. When answering user queries, always mention the video source and timestamp when possible.
+Be concise and accurate in your responses, and note that this information comes from a YouTube video.`
   };
 
   constructor() {
@@ -51,7 +55,7 @@ Be concise and accurate in your responses.`
     chatHistory: ChatMessage[] = []
   ): Promise<string> {
     try {
-      const [textAnswer, fileAnswer, linkAnswer] = await Promise.allSettled([
+      const [textAnswer, fileAnswer, linkAnswer, youtubeAnswer] = await Promise.allSettled([
         knowledgeBaseData.textInfo
           ? this.getAnswerFromSource(knowledgeBaseData.textInfo, message, chatHistory, 'text')
           : Promise.resolve(null),
@@ -61,9 +65,12 @@ Be concise and accurate in your responses.`
         knowledgeBaseData.linkInfo
           ? this.getAnswerFromSource(knowledgeBaseData.linkInfo, message, chatHistory, 'website')
           : Promise.resolve(null),
+        knowledgeBaseData.youtubeInfo
+          ? this.getAnswerFromSource(knowledgeBaseData.youtubeInfo, message, chatHistory, 'youtube')
+          : Promise.resolve(null),
       ]);
 
-      const validAnswers = [textAnswer, fileAnswer, linkAnswer]
+      const validAnswers = [textAnswer, fileAnswer, linkAnswer, youtubeAnswer]
         .filter(result => result.status === 'fulfilled' && result.value)
         .map(result => (result as PromiseFulfilledResult<string | null>).value!)
         .filter(Boolean);
@@ -87,7 +94,7 @@ Be concise and accurate in your responses.`
     sourceInfo: NonNullable<KnowledgeBaseData['textInfo']>,
     userQuery: string,
     chatHistory: ChatMessage[],
-    sourceType: 'text' | 'pdf' | 'website'
+    sourceType: 'text' | 'pdf' | 'website' | 'youtube'
   ): Promise<string | null> {
     try {
       if (!sourceInfo?.collectionName) {

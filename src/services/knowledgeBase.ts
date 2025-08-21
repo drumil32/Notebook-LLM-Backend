@@ -3,11 +3,13 @@ import { redisService } from './redis';
 import { pdfLoaderService, PDFProcessingResult } from './pdfLoader';
 import { webLoaderService, WebProcessingResult, WebProcessingOptions } from './webLoader';
 import { textLoaderService, TextProcessingResult } from './textLoader';
+import { youtubeLoaderService, YouTubeProcessingResult, YouTubeProcessingOptions } from './youtubeLoader';
 
 export interface KnowledgeBaseInput {
   text?: string;
   file?: Express.Multer.File;
   link?: string;
+  youtubeUrl?: string;
 }
 
 export interface ValidationError {
@@ -38,6 +40,18 @@ export interface KnowledgeBaseData {
     documentCount?: number;
     chunkCount?: number;
     crawlDepth?: 'single' | 'site';
+  };
+  youtubeInfo?: {
+    url: string;
+    collectionName?: string;
+    documentCount?: number;
+    chunkCount?: number;
+    videoInfo?: {
+      title?: string;
+      author?: string;
+      length?: string;
+      description?: string;
+    };
   };
   textInfo?: {
     collectionName?: string;
@@ -77,6 +91,13 @@ class KnowledgeBaseService {
         createdAt: now.toISOString(),
         expiresAt: expiresAt.toISOString()
       };
+
+      // Add YouTube URL to data if provided
+      if (input.youtubeUrl) {
+        knowledgeBaseData.youtubeInfo = {
+          url: input.youtubeUrl
+        };
+      }
 
       // Process all inputs in parallel
       const processingTasks = [];
@@ -119,6 +140,21 @@ class KnowledgeBaseService {
           type: 'link',
           task: webLoaderService.processWebsite(input.link, token, webOptions),
           options: webOptions
+        });
+      }
+
+      // Setup YouTube processing task
+      if (input.youtubeUrl) {
+        console.log(`🎥 Processing YouTube video: ${input.youtubeUrl}`);
+        const youtubeOptions: YouTubeProcessingOptions = {
+          // language: 'en',
+          chunkSize: 1000,
+          chunkOverlap: 200
+        };
+        processingTasks.push({
+          type: 'youtube',
+          task: youtubeLoaderService.processYouTube(input.youtubeUrl, token, youtubeOptions),
+          options: youtubeOptions
         });
       }
 
@@ -178,6 +214,16 @@ class KnowledgeBaseService {
                 crawlDepth: linkTask.options.crawlDepth
               };
               break;
+
+            case 'youtube':
+              if (knowledgeBaseData.youtubeInfo) {
+                const youtubeResult = taskResult as YouTubeProcessingResult;
+                knowledgeBaseData.youtubeInfo.collectionName = youtubeResult.collectionName;
+                knowledgeBaseData.youtubeInfo.documentCount = youtubeResult.documentCount;
+                knowledgeBaseData.youtubeInfo.chunkCount = youtubeResult.chunkCount;
+                knowledgeBaseData.youtubeInfo.videoInfo = youtubeResult.videoInfo;
+              }
+              break;
           }
         }
 
@@ -205,10 +251,10 @@ class KnowledgeBaseService {
   private validateInput(input: KnowledgeBaseInput): ValidationError[] {
     const errors: ValidationError[] = [];
 
-    if (!input.text && !input.file && !input.link) {
+    if (!input.text && !input.file && !input.link && !input.youtubeUrl) {
       errors.push({
         field: 'general',
-        message: 'At least one of text, file, or link must be provided'
+        message: 'At least one of text, file, link, or YouTube URL must be provided'
       });
       return errors;
     }
@@ -248,6 +294,15 @@ class KnowledgeBaseService {
       }
     }
 
+    if (input.youtubeUrl) {
+      if (!this.isValidYouTubeUrl(input.youtubeUrl)) {
+        errors.push({
+          field: 'youtubeUrl',
+          message: 'Invalid YouTube URL format'
+        });
+      }
+    }
+
     return errors;
   }
 
@@ -259,6 +314,30 @@ class KnowledgeBaseService {
     try {
       const parsedUrl = new URL(url);
       return ['http:', 'https:'].includes(parsedUrl.protocol);
+    } catch {
+      return false;
+    }
+  }
+
+  private isValidYouTubeUrl(url: string): boolean {
+    try {
+      const parsedUrl = new URL(url);
+      const hostname = parsedUrl.hostname.toLowerCase();
+      
+      // Check for various YouTube URL formats
+      const isYouTube = hostname === 'www.youtube.com' || 
+                        hostname === 'youtube.com' || 
+                        hostname === 'm.youtube.com' || 
+                        hostname === 'youtu.be';
+      
+      if (!isYouTube) return false;
+
+      // Check for video ID in different formats
+      if (hostname === 'youtu.be') {
+        return parsedUrl.pathname.length > 1; // Has video ID
+      } else {
+        return parsedUrl.searchParams.has('v') || parsedUrl.pathname.includes('/watch');
+      }
     } catch {
       return false;
     }
@@ -306,6 +385,9 @@ class KnowledgeBaseService {
         }
         if (parsedData.textInfo?.collectionName) {
           await textLoaderService.deleteCollection(token);
+        }
+        if (parsedData.youtubeInfo?.collectionName) {
+          await youtubeLoaderService.deleteCollection(token);
         }
       }
 

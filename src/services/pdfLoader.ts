@@ -31,7 +31,7 @@ class PDFLoaderService {
         };
       }
 
-      const blob = new Blob([buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer], { 
+      const blob = new Blob([buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer], {
         type: 'application/pdf'
       });
 
@@ -39,9 +39,9 @@ class PDFLoaderService {
         splitPages: true,
         parsedItemSeparator: ' '
       });
-      
+
       const docs = await loader.load();
-      
+
       if (docs.length === 0) {
         return {
           success: false,
@@ -50,9 +50,9 @@ class PDFLoaderService {
       }
 
       const collectionName = `pdf-${token}`;
-      const vectorStore = await QdrantVectorStore.fromDocuments(
-        docs, 
-        this.embeddings, 
+      await QdrantVectorStore.fromDocuments(
+        docs,
+        this.embeddings,
         {
           url: config.qdrantUrl,
           apiKey: config.qdrantApiKey,
@@ -61,7 +61,7 @@ class PDFLoaderService {
       );
 
       console.log(`✅ PDF indexed successfully. Collection: ${collectionName}, Documents: ${docs.length}`);
-      
+
       return {
         success: true,
         collectionName,
@@ -77,7 +77,7 @@ class PDFLoaderService {
     }
   }
 
-//   Will see if needed NOT USED FOR NOW
+  //   Will see if needed NOT USED FOR NOW
   async deleteCollection(token: string): Promise<boolean> {
     try {
       const collectionName = `pdf-${token}`;

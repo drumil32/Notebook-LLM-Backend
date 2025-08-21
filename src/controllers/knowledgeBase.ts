@@ -12,14 +12,14 @@ export class KnowledgeBaseController {
         return;
       }
 
-      console.log(req.body)
-      const { text, link } = req.body;
+      const { text, link, youtubeUrl } = req.body;
       const file = req.file;
 
       const input: KnowledgeBaseInput = {
         text,
         file,
-        link
+        link,
+        youtubeUrl
       };
       const result = await knowledgeBaseService.processKnowledgeBase(input);
 
