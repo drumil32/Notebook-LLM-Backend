@@ -1,12 +1,11 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { chatService } from '../services/chatService';
 import { redisService } from '../services/redis';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { config } from '../config';
 import { Agent, run } from '@openai/agents';
-
+const courses = ['NodeJs','Python'];
 export class CourseChatController {
   private readonly CHAT_HISTORY_TTL = 3600; // 5 minutes
   private readonly embeddings: GoogleGenerativeAIEmbeddings;
@@ -28,13 +27,13 @@ export class CourseChatController {
         return;
       }
 
-      const { message } = req.body;
+      const { message, courseName } = req.body;
       let { token } = req.body;
 
-      if (!message) {
+      if (!message || !courseName || !courses.includes(courseName)) {
         res.status(400).json({
           success: false,
-          message: 'Both message and token are required'
+          message: 'Both message and courseName are required'
         });
         return;
       }
@@ -47,7 +46,7 @@ export class CourseChatController {
         {
           url: config.qdrantUrl,
           apiKey: config.qdrantApiKey,
-          collectionName: 'chai-or-code',
+          collectionName: `chai-or-code-${courseName.toLowerCase()}`,
         }
       );
 
@@ -74,6 +73,7 @@ export class CourseChatController {
       res.status(200).json({
         success: true,
         message: result.finalOutput,
+        courseName,
         token,
       });
     } catch (error) {
