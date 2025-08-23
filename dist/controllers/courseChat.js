@@ -7,6 +7,7 @@ const qdrant_1 = require("@langchain/qdrant");
 const google_genai_1 = require("@langchain/google-genai");
 const config_1 = require("../config");
 const agents_1 = require("@openai/agents");
+const courses = ['NodeJs', 'Python'];
 class CourseChatController {
     constructor() {
         this.CHAT_HISTORY_TTL = 3600; // 5 minutes
@@ -25,12 +26,12 @@ class CourseChatController {
                 });
                 return;
             }
-            const { message } = req.body;
+            const { message, courseName } = req.body;
             let { token } = req.body;
-            if (!message) {
+            if (!message || !courseName || !courses.includes(courseName)) {
                 res.status(400).json({
                     success: false,
-                    message: 'Both message and token are required'
+                    message: 'Both message and courseName are required'
                 });
                 return;
             }
@@ -40,7 +41,7 @@ class CourseChatController {
             const vectorStore = await qdrant_1.QdrantVectorStore.fromExistingCollection(this.embeddings, {
                 url: config_1.config.qdrantUrl,
                 apiKey: config_1.config.qdrantApiKey,
-                collectionName: 'chai-or-code',
+                collectionName: `chai-or-code-${courseName.toLowerCase()}`,
             });
             const retriever = vectorStore.asRetriever({
                 k: 3,
@@ -61,6 +62,7 @@ class CourseChatController {
             res.status(200).json({
                 success: true,
                 message: result.finalOutput,
+                courseName,
                 token,
             });
         }
