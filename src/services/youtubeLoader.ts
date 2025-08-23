@@ -1,14 +1,14 @@
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { Document } from '@langchain/core/documents';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
-import { TranscriptList } from '@osiris-ai/youtube-captions-sdk';
+// Will use dynamic import for youtube-transcript-plus
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { config } from '../config';
 import { QdrantVectorStore } from '@langchain/qdrant';
 
 export interface TranscriptSegment {
   text: string;
-  start: number;
+  offset: number;
   duration: number;
 }
 
@@ -86,22 +86,14 @@ class YouTubeLoaderService {
     console.log('✅ YouTube Loader Service initialized successfully');
   }
 
-  private async createTranscript(videoId: string, language?: string): Promise<{ snippets: TranscriptSegment[] }> {
+  private async createTranscript(videoId: string, language?: string): Promise<TranscriptSegment[]> {
     console.log(`🎥 Fetching transcript for video: ${videoId}`);
 
     try {
-      const transcriptList = await TranscriptList.fetch(videoId);
-      const preferredLanguages = language ? [language] : ['en', 'en-US', 'hi'];
-      const transcript = transcriptList.find(preferredLanguages);
+      const ytTranscript = await (Function('return import("youtube-transcript-plus")')());
+      const data = await ytTranscript.fetchTranscript(videoId);
 
-      if (!transcript) {
-        throw new Error(`No transcript found for languages: ${preferredLanguages.join(', ')}`);
-      }
-
-      const fetched = await transcript.fetch();
-      console.log(`✅ Successfully fetched ${fetched.snippets.length} transcript segments`);
-
-      return fetched;
+      return data;
     } catch (error) {
       console.error(`❌ Error fetching transcript for video ${videoId}:`, error);
       throw error;
@@ -121,12 +113,12 @@ class YouTubeLoaderService {
     let currentEndTime = -1;
 
     for (const segment of segments) {
-      const segmentEndTime = segment.start + segment.duration;
+      const segmentEndTime = segment.offset + segment.duration;
 
       currentText += segment.text + ' ';
 
       if (currentStartTime === -1) {
-        currentStartTime = segment.start;
+        currentStartTime = segment.offset;
       }
 
       currentEndTime = Math.max(currentEndTime, segmentEndTime);
@@ -145,6 +137,7 @@ class YouTubeLoaderService {
       }
     }
 
+    // Handle any remaining segments
     if (currentStartTime !== -1) {
       result.push({
         text: currentText.trim(),
@@ -285,7 +278,7 @@ class YouTubeLoaderService {
 
       const transcriptData = await this.createTranscript(videoId, language);
       const combinedSegments = this.combineToMinDuration(
-        transcriptData.snippets,
+        transcriptData,
         minDurationMinutes
       );
 
