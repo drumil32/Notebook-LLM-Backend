@@ -7,6 +7,7 @@ interface Config {
     qdrantUrl: string;
     qdrantApiKey: string;
     openaiApiKey: string;
+    googleApiKey: string;
 }
 export declare const config: Config;
 export {};

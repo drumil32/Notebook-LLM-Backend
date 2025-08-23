@@ -1,12 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.knowledgeBaseAI = void 0;
-const openai_1 = require("@langchain/openai");
-const openai_2 = require("openai");
+const openai_1 = require("openai");
 const config_1 = require("../config");
 const qdrant_1 = require("@langchain/qdrant");
+const google_genai_1 = require("@langchain/google-genai");
 class KnowledgeBaseAI {
     constructor() {
+        // this.embeddings = new OpenAIEmbeddings({
+        //   apiKey: config.openaiApiKey,
+        //   batchSize: 512,
+        //   model: 'text-embedding-3-large',
+        // });
         this.systemPrompts = {
             pdf: `You are an AI assistant who provides answers based on the available context from PDF documents. 
 You must stay strictly within the provided context. When answering user queries, always mention the source of the information.
@@ -19,14 +24,13 @@ You must stay strictly within the provided context. When answering user queries,
 Be concise and accurate in your responses.`,
             youtube: `You are an AI assistant who provides answers based on the available context from YouTube video transcripts. 
 You must stay strictly within the provided context. When answering user queries, always mention the video source and timestamp when possible.
-Be concise and accurate in your responses, and note that this information comes from a YouTube video.`
+Be concise and accurate in your responses. Note that this information comes from a YouTube video and share the timestamped video link from the metadata (found under "timestampedVideoLink")`
         };
-        this.embeddings = new openai_1.OpenAIEmbeddings({
-            apiKey: config_1.config.openaiApiKey,
-            batchSize: 512,
-            model: 'text-embedding-3-large',
+        this.embeddings = new google_genai_1.GoogleGenerativeAIEmbeddings({
+            apiKey: config_1.config.googleApiKey,
+            model: "text-embedding-004"
         });
-        this.openaiClient = new openai_2.OpenAI({
+        this.openaiClient = new openai_1.OpenAI({
             apiKey: config_1.config.openaiApiKey
         });
     }
