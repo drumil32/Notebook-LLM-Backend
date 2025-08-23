@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
 const config_1 = require("./config");
 const redis_1 = require("./services/redis");
 const knowledgeBase_1 = __importDefault(require("./routes/knowledgeBase"));
@@ -12,6 +13,13 @@ const courseChat_1 = __importDefault(require("./routes/courseChat"));
 const app = (0, express_1.default)();
 // Trust proxy for proper IP detection (important for rate limiting)
 app.set('trust proxy', 'loopback');
+// Enable CORS for all routes and origins
+app.use((0, cors_1.default)({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false
+}));
 app.use(express_1.default.json());
 // Add middleware to log all requests
 app.use((req, res, next) => {

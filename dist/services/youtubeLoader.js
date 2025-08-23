@@ -1,10 +1,48 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.youtubeLoaderService = void 0;
 const openai_1 = require("@langchain/openai");
 const documents_1 = require("@langchain/core/documents");
 const textsplitters_1 = require("@langchain/textsplitters");
 // Will use dynamic import for youtube-transcript-plus
+// import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
+const axios_1 = __importDefault(require("axios"));
 const google_genai_1 = require("@langchain/google-genai");
 const config_1 = require("../config");
 const qdrant_1 = require("@langchain/qdrant");
@@ -30,57 +68,23 @@ class YouTubeLoaderService {
     async createTranscript(videoId, language) {
         console.log(`🎥 Fetching transcript for video: ${videoId}`);
         try {
-            const ytTranscript = await (Function('return import("@osiris-ai/youtube-captions-sdk")')());
-            const transcriptList = await ytTranscript.TranscriptList.fetch(videoId);
-            const transcript = transcriptList.find(['en', 'en-US', 'hi']);
-            const fetched = await transcript.fetch();
-            return fetched.snippets;
+            // const ytTranscript = await (Function('return import("@osiris-ai/youtube-captions-sdk")')());
+            // const transcriptList = await ytTranscript.TranscriptList.fetch(videoId);
+            // console.log(transcriptList);
+            // const transcript = transcriptList.find(['en', 'en-US', 'hi']);
+            // console.log(transcript);
+            // const fetched = await transcript.fetch();
+            const resp = await (0, axios_1.default)(`http://localhost:3010/captions/${videoId}`);
+            const data = resp.data;
+            console.log(data);
+            return data;
+            // return fetched.snippets;
         }
         catch (error) {
             console.error(`❌ Error fetching transcript for video ${videoId}:`, error);
             throw error;
         }
     }
-    // private combineToMinDuration(
-    //   segments: TranscriptSegment[],
-    //   minDurationMinutes: number = 5
-    // ): CombinedTranscriptSegment[] {
-    //   console.log(`🔗 Combining ${segments.length} segments to minimum duration of ${minDurationMinutes} minutes`);
-    //   const minDurationSeconds = minDurationMinutes * 60;
-    //   const result: CombinedTranscriptSegment[] = [];
-    //   let currentText = '';
-    //   let currentStartTime = -1;
-    //   let currentEndTime = -1;
-    //   for (const segment of segments) {
-    //     const segmentEndTime = segment.offset + segment.duration;
-    //     currentText += segment.text + ' ';
-    //     if (currentStartTime === -1) {
-    //       currentStartTime = segment.offset;
-    //     }
-    //     currentEndTime = Math.max(currentEndTime, segmentEndTime);
-    //     const actualDuration = currentEndTime - currentStartTime;
-    //     if (actualDuration >= minDurationSeconds) {
-    //       result.push({
-    //         text: currentText.trim(),
-    //         start: currentStartTime,
-    //         duration: actualDuration
-    //       });
-    //       currentStartTime = -1;
-    //       currentEndTime = -1;
-    //       currentText = '';
-    //     }
-    //   }
-    //   // Handle any remaining segments
-    //   if (currentStartTime !== -1) {
-    //     result.push({
-    //       text: currentText.trim(),
-    //       start: currentStartTime,
-    //       duration: currentEndTime - currentStartTime
-    //     });
-    //   }
-    //   console.log(`✅ Combined into ${result.length} segments`);
-    //   return result;
-    // }
     combineToMinDuration(data, minDurationMinutes = 5) {
         const minDurationSeconds = minDurationMinutes * 60; // Convert to seconds (300s)
         const result = [];
@@ -212,32 +216,54 @@ class YouTubeLoaderService {
             const collectionName = customCollectionName || `youtube-${token}`;
             console.log(`🎬 Processing video ID: ${videoId}`);
             console.log(`💾 Target collection: ${collectionName}`);
-            const transcriptData = await this.createTranscript(videoId, language);
-            const combinedSegments = this.combineToMinDuration(transcriptData, minDurationMinutes);
-            if (combinedSegments.length === 0) {
-                console.warn(`⚠️ No valid transcript segments found for video: ${videoId}`);
-                return {
-                    success: false,
-                    error: 'No valid transcript segments found'
-                };
-            }
-            const videoTitle = `YouTube Video (${videoId})`;
-            const embeddingResult = await this.createEmbeddingsFromSubtitles(combinedSegments, videoTitle, normalizedUrl, collectionName, options);
+            // best approach for yb transcript but lib is not working on linux env so using langchain lib for now.
+            // const transcriptData = await this.createTranscript(videoId, language);
+            // const combinedSegments = this.combineToMinDuration(
+            //   transcriptData,
+            //   minDurationMinutes
+            // );
+            // if (combinedSegments.length === 0) {
+            //   console.warn(`⚠️ No valid transcript segments found for video: ${videoId}`);
+            //   return {
+            //     success: false,
+            //     error: 'No valid transcript segments found'
+            //   };
+            // }
+            // const videoTitle = `YouTube Video (${videoId})`;
+            // const embeddingResult = await this.createEmbeddingsFromSubtitles(
+            //   combinedSegments,
+            //   videoTitle,
+            //   normalizedUrl,
+            //   collectionName,
+            //   options
+            // );
+            const { YoutubeLoader } = await Promise.resolve().then(() => __importStar(require('@langchain/community/document_loaders/web/youtube')));
+            const loader = YoutubeLoader.createFromUrl(videoUrl, {
+                language: "en",
+                addVideoInfo: true,
+            });
+            const docs = await loader.load();
+            const splitDocs = await this.textSplitter.splitDocuments(docs);
+            await qdrant_1.QdrantVectorStore.fromDocuments(splitDocs, this.googleEmbeddings, {
+                url: config_1.config.qdrantUrl,
+                apiKey: config_1.config.qdrantApiKey,
+                collectionName,
+            });
             const videoInfo = {
-                title: videoTitle,
-                author: 'Unknown Author',
+                title: docs[0].metadata.title,
+                author: docs[0].metadata.author,
                 length: 'Unknown Duration',
-                description: 'Transcript extracted from YouTube video',
+                description: docs[0].metadata.description,
                 videoId
             };
             const processingTime = Date.now() - startTime;
             console.log(`✅ YouTube video processed successfully in ${processingTime}ms`);
-            console.log(`📊 Processed ${embeddingResult.documentCount} documents into ${embeddingResult.chunkCount} chunks`);
+            // console.log(`📊 Processed ${embeddingResult.documentCount} documents into ${embeddingResult.chunkCount} chunks`);
             return {
                 success: true,
                 collectionName,
-                documentCount: embeddingResult.documentCount,
-                chunkCount: embeddingResult.chunkCount,
+                documentCount: splitDocs.length,
+                chunkCount: splitDocs.length,
                 videoInfo
             };
         }
