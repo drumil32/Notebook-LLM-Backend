@@ -318,14 +318,26 @@ class YouTubeLoaderService {
       //   collectionName,
       //   options
       // );
-      const { YoutubeLoader } = await import('@langchain/community/document_loaders/web/youtube');
+      // const { YoutubeLoader } = await import('@langchain/community/document_loaders/web/youtube');
 
-      const loader = YoutubeLoader.createFromUrl(videoUrl, {
-        language: "en",
-        addVideoInfo: true,
-      });
+      // const loader = YoutubeLoader.createFromUrl(videoUrl, {
+      //   language: "en",
+      //   addVideoInfo: true,
+      // });
 
-      const docs = await loader.load();
+      // const docs = await loader.load();
+      let resp;
+      try{
+        resp = await axios.get(`http://localhost:3010/captions/${encodeURIComponent(videoUrl)}`);
+      }catch(error:any){
+        console.log(error.message);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+      const docs = resp.data.snippets;
+      // console.log(docs);
       const splitDocs = await this.textSplitter.splitDocuments(docs);
 
       await QdrantVectorStore.fromDocuments(
