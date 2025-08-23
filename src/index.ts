@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { config } from './config';
 import { redisService } from './services/redis';
 import knowledgeBaseRoutes from './routes/knowledgeBase';
@@ -10,7 +11,16 @@ const app = express();
 // Trust proxy for proper IP detection (important for rate limiting)
 app.set('trust proxy', 'loopback');
 
+// Enable CORS for all routes and origins
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+}));
+
 app.use(express.json());
+
 
 // Add middleware to log all requests
 app.use((req, res, next) => {
