@@ -8,6 +8,7 @@ const config_1 = require("./config");
 const redis_1 = require("./services/redis");
 const knowledgeBase_1 = __importDefault(require("./routes/knowledgeBase"));
 const chat_1 = __importDefault(require("./routes/chat"));
+const courseChat_1 = __importDefault(require("./routes/courseChat"));
 const app = (0, express_1.default)();
 // Trust proxy for proper IP detection (important for rate limiting)
 app.set('trust proxy', 'loopback');
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 });
 app.use('/chat', chat_1.default);
 app.use('/knowledge-base', knowledgeBase_1.default);
+app.use('/course-chat', courseChat_1.default);
 async function startServer() {
     try {
         await redis_1.redisService.connect();
