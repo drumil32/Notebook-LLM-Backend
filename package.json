@@ -23,6 +23,7 @@
     "@openai/agents": "^0.0.17",
     "@osiris-ai/youtube-captions-sdk": "^0.1.0",
     "axios": "^1.11.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "multer": "^2.0.2",
@@ -33,9 +34,10 @@
     "uuid": "^11.1.0",
     "youtube-transcript": "^1.2.1",
     "youtube-transcript-plus": "^1.1.0",
-    "youtubei.js": "^15.0.1"
+    "youtubei.js": "^10.5.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.3.0",
