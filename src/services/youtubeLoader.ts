@@ -2,6 +2,8 @@ import { OpenAIEmbeddings } from '@langchain/openai';
 import { Document } from '@langchain/core/documents';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 // Will use dynamic import for youtube-transcript-plus
+// import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
+import axios from 'axios';
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { config } from '../config';
 import { QdrantVectorStore } from '@langchain/qdrant';
@@ -90,69 +92,22 @@ class YouTubeLoaderService {
     console.log(`🎥 Fetching transcript for video: ${videoId}`);
 
     try {
-      const ytTranscript = await (Function('return import("@osiris-ai/youtube-captions-sdk")')());
-      // const data = await ytTranscript.fetchTranscript(videoId);
-
-      const transcriptList = await ytTranscript.TranscriptList.fetch(videoId);
-      const transcript = transcriptList.find(['en', 'en-US', 'hi']);
-      const fetched = await transcript.fetch();
-      console.log(fetched);
-      return fetched.snippets;
+      // const ytTranscript = await (Function('return import("@osiris-ai/youtube-captions-sdk")')());
+      // const transcriptList = await ytTranscript.TranscriptList.fetch(videoId);
+      // console.log(transcriptList);
+      // const transcript = transcriptList.find(['en', 'en-US', 'hi']);
+      // console.log(transcript);
+      // const fetched = await transcript.fetch();
+      const resp = await axios(`http://localhost:3010/captions/${videoId}`);
+      const data: TranscriptSegment[] = resp.data;
+      console.log(data);
+      return data;
+      // return fetched.snippets;
     } catch (error) {
       console.error(`❌ Error fetching transcript for video ${videoId}:`, error);
       throw error;
     }
   }
-
-  // private combineToMinDuration(
-  //   segments: TranscriptSegment[],
-  //   minDurationMinutes: number = 5
-  // ): CombinedTranscriptSegment[] {
-  //   console.log(`🔗 Combining ${segments.length} segments to minimum duration of ${minDurationMinutes} minutes`);
-
-  //   const minDurationSeconds = minDurationMinutes * 60;
-  //   const result: CombinedTranscriptSegment[] = [];
-  //   let currentText = '';
-  //   let currentStartTime = -1;
-  //   let currentEndTime = -1;
-
-  //   for (const segment of segments) {
-  //     const segmentEndTime = segment.offset + segment.duration;
-
-  //     currentText += segment.text + ' ';
-
-  //     if (currentStartTime === -1) {
-  //       currentStartTime = segment.offset;
-  //     }
-
-  //     currentEndTime = Math.max(currentEndTime, segmentEndTime);
-  //     const actualDuration = currentEndTime - currentStartTime;
-
-  //     if (actualDuration >= minDurationSeconds) {
-  //       result.push({
-  //         text: currentText.trim(),
-  //         start: currentStartTime,
-  //         duration: actualDuration
-  //       });
-
-  //       currentStartTime = -1;
-  //       currentEndTime = -1;
-  //       currentText = '';
-  //     }
-  //   }
-
-  //   // Handle any remaining segments
-  //   if (currentStartTime !== -1) {
-  //     result.push({
-  //       text: currentText.trim(),
-  //       start: currentStartTime,
-  //       duration: currentEndTime - currentStartTime
-  //     });
-  //   }
-
-  //   console.log(`✅ Combined into ${result.length} segments`);
-  //   return result;
-  // }
 
   private combineToMinDuration(
     data: TranscriptSegment[],
@@ -340,46 +295,66 @@ class YouTubeLoaderService {
       console.log(`🎬 Processing video ID: ${videoId}`);
       console.log(`💾 Target collection: ${collectionName}`);
 
-      const transcriptData = await this.createTranscript(videoId, language);
-      const combinedSegments = this.combineToMinDuration(
-        transcriptData,
-        minDurationMinutes
-      );
+      // best approach for yb transcript but lib is not working on linux env so using langchain lib for now.
+      // const transcriptData = await this.createTranscript(videoId, language);
+      // const combinedSegments = this.combineToMinDuration(
+      //   transcriptData,
+      //   minDurationMinutes
+      // );
 
-      if (combinedSegments.length === 0) {
-        console.warn(`⚠️ No valid transcript segments found for video: ${videoId}`);
-        return {
-          success: false,
-          error: 'No valid transcript segments found'
-        };
-      }
+      // if (combinedSegments.length === 0) {
+      //   console.warn(`⚠️ No valid transcript segments found for video: ${videoId}`);
+      //   return {
+      //     success: false,
+      //     error: 'No valid transcript segments found'
+      //   };
+      // }
 
-      const videoTitle = `YouTube Video (${videoId})`;
-      const embeddingResult = await this.createEmbeddingsFromSubtitles(
-        combinedSegments,
-        videoTitle,
-        normalizedUrl,
-        collectionName,
-        options
+      // const videoTitle = `YouTube Video (${videoId})`;
+      // const embeddingResult = await this.createEmbeddingsFromSubtitles(
+      //   combinedSegments,
+      //   videoTitle,
+      //   normalizedUrl,
+      //   collectionName,
+      //   options
+      // );
+      const { YoutubeLoader } = await import('@langchain/community/document_loaders/web/youtube');
+
+      const loader = YoutubeLoader.createFromUrl(videoUrl, {
+        language: "en",
+        addVideoInfo: true,
+      });
+
+      const docs = await loader.load();
+      const splitDocs = await this.textSplitter.splitDocuments(docs);
+
+      await QdrantVectorStore.fromDocuments(
+        splitDocs,
+        this.googleEmbeddings,
+        {
+          url: config.qdrantUrl,
+          apiKey: config.qdrantApiKey,
+          collectionName,
+        }
       );
 
       const videoInfo: VideoInfo = {
-        title: videoTitle,
-        author: 'Unknown Author',
+        title: docs[0].metadata.title,
+        author: docs[0].metadata.author,
         length: 'Unknown Duration',
-        description: 'Transcript extracted from YouTube video',
+        description: docs[0].metadata.description,
         videoId
       };
 
       const processingTime = Date.now() - startTime;
       console.log(`✅ YouTube video processed successfully in ${processingTime}ms`);
-      console.log(`📊 Processed ${embeddingResult.documentCount} documents into ${embeddingResult.chunkCount} chunks`);
+      // console.log(`📊 Processed ${embeddingResult.documentCount} documents into ${embeddingResult.chunkCount} chunks`);
 
       return {
         success: true,
         collectionName,
-        documentCount: embeddingResult.documentCount,
-        chunkCount: embeddingResult.chunkCount,
+        documentCount: splitDocs.length,
+        chunkCount: splitDocs.length,
         videoInfo
       };
     } catch (error) {

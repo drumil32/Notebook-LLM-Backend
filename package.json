@@ -22,6 +22,7 @@
     "@langchain/textsplitters": "^0.1.0",
     "@openai/agents": "^0.0.17",
     "@osiris-ai/youtube-captions-sdk": "^0.1.0",
+    "axios": "^1.11.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "multer": "^2.0.2",
@@ -31,7 +32,8 @@
     "redis": "^5.8.1",
     "uuid": "^11.1.0",
     "youtube-transcript": "^1.2.1",
-    "youtube-transcript-plus": "^1.1.0"
+    "youtube-transcript-plus": "^1.1.0",
+    "youtubei.js": "^15.0.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
