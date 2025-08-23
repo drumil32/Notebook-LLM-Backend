@@ -3,6 +3,7 @@ import { config } from './config';
 import { redisService } from './services/redis';
 import knowledgeBaseRoutes from './routes/knowledgeBase';
 import chatRoutes from './routes/chat';
+import courseChatRoutes from './routes/courseChat';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 
 app.use('/chat', chatRoutes);
 app.use('/knowledge-base', knowledgeBaseRoutes);
+app.use('/course-chat',courseChatRoutes);
 
 async function startServer() {
   try {
