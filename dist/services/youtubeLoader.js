@@ -33,7 +33,9 @@ class YouTubeLoaderService {
             const ytTranscript = await (Function('return import("@osiris-ai/youtube-captions-sdk")')());
             // const data = await ytTranscript.fetchTranscript(videoId);
             const transcriptList = await ytTranscript.TranscriptList.fetch(videoId);
+            console.log(transcriptList);
             const transcript = transcriptList.find(['en', 'en-US', 'hi']);
+            console.log(transcript);
             const fetched = await transcript.fetch();
             console.log(fetched);
             return fetched.snippets;
