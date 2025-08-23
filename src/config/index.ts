@@ -11,6 +11,7 @@ interface Config {
   qdrantUrl: string;
   qdrantApiKey: string;
   openaiApiKey: string;
+  googleApiKey: string;
 }
 
 const requiredEnvVars = [
@@ -20,7 +21,9 @@ const requiredEnvVars = [
   'JWT_SECRET',
   'REDIS_URL',
   'QDRANT_URL',
-  'OPENAI_API_KEY'
+  'QDRANT_API_KEY',
+  'OPENAI_API_KEY',
+  'GOOGLE_API_KEY'
 ] as const;
 
 function validateEnvVars(): Config {
@@ -49,7 +52,8 @@ function validateEnvVars(): Config {
     redisUrl: process.env.REDIS_URL!,
     qdrantUrl: process.env.QDRANT_URL!,
     qdrantApiKey: process.env.QDRANT_API_KEY!,
-    openaiApiKey: process.env.OPENAI_API_KEY!
+    openaiApiKey: process.env.OPENAI_API_KEY!,
+    googleApiKey: process.env.GOOGLE_API_KEY!
   };
 }
 
