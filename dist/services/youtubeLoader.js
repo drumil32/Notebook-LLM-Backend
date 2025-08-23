@@ -30,50 +30,103 @@ class YouTubeLoaderService {
     async createTranscript(videoId, language) {
         console.log(`🎥 Fetching transcript for video: ${videoId}`);
         try {
-            const ytTranscript = await (Function('return import("youtube-transcript-plus")')());
-            const data = await ytTranscript.fetchTranscript(videoId);
-            return data;
+            const ytTranscript = await (Function('return import("@osiris-ai/youtube-captions-sdk")')());
+            // const data = await ytTranscript.fetchTranscript(videoId);
+            const transcriptList = await ytTranscript.TranscriptList.fetch(videoId);
+            const transcript = transcriptList.find(['en', 'en-US', 'hi']);
+            const fetched = await transcript.fetch();
+            console.log(fetched);
+            return fetched.snippets;
         }
         catch (error) {
             console.error(`❌ Error fetching transcript for video ${videoId}:`, error);
             throw error;
         }
     }
-    combineToMinDuration(segments, minDurationMinutes = 5) {
-        console.log(`🔗 Combining ${segments.length} segments to minimum duration of ${minDurationMinutes} minutes`);
-        const minDurationSeconds = minDurationMinutes * 60;
+    // private combineToMinDuration(
+    //   segments: TranscriptSegment[],
+    //   minDurationMinutes: number = 5
+    // ): CombinedTranscriptSegment[] {
+    //   console.log(`🔗 Combining ${segments.length} segments to minimum duration of ${minDurationMinutes} minutes`);
+    //   const minDurationSeconds = minDurationMinutes * 60;
+    //   const result: CombinedTranscriptSegment[] = [];
+    //   let currentText = '';
+    //   let currentStartTime = -1;
+    //   let currentEndTime = -1;
+    //   for (const segment of segments) {
+    //     const segmentEndTime = segment.offset + segment.duration;
+    //     currentText += segment.text + ' ';
+    //     if (currentStartTime === -1) {
+    //       currentStartTime = segment.offset;
+    //     }
+    //     currentEndTime = Math.max(currentEndTime, segmentEndTime);
+    //     const actualDuration = currentEndTime - currentStartTime;
+    //     if (actualDuration >= minDurationSeconds) {
+    //       result.push({
+    //         text: currentText.trim(),
+    //         start: currentStartTime,
+    //         duration: actualDuration
+    //       });
+    //       currentStartTime = -1;
+    //       currentEndTime = -1;
+    //       currentText = '';
+    //     }
+    //   }
+    //   // Handle any remaining segments
+    //   if (currentStartTime !== -1) {
+    //     result.push({
+    //       text: currentText.trim(),
+    //       start: currentStartTime,
+    //       duration: currentEndTime - currentStartTime
+    //     });
+    //   }
+    //   console.log(`✅ Combined into ${result.length} segments`);
+    //   return result;
+    // }
+    combineToMinDuration(data, minDurationMinutes = 5) {
+        const minDurationSeconds = minDurationMinutes * 60; // Convert to seconds (300s)
         const result = [];
         let currentText = '';
         let currentStartTime = -1;
         let currentEndTime = -1;
-        for (const segment of segments) {
-            const segmentEndTime = segment.offset + segment.duration;
-            currentText += segment.text + ' ';
+        for (let i = 0; i < data.length; i++) {
+            const item = data[i];
+            const itemEndTime = item.start + item.duration;
+            // Add current item to the group
+            currentText += item.text + ' ';
+            // Set start time for the first item in group
             if (currentStartTime === -1) {
-                currentStartTime = segment.offset;
+                currentStartTime = item.start;
             }
-            currentEndTime = Math.max(currentEndTime, segmentEndTime);
+            // Update the end time to the latest end time
+            currentEndTime = Math.max(currentEndTime, itemEndTime);
+            // Calculate actual elapsed time (from first start to latest end)
             const actualDuration = currentEndTime - currentStartTime;
+            // Check if we've reached the minimum duration
             if (actualDuration >= minDurationSeconds) {
-                result.push({
+                // Create combined object
+                const combinedItem = {
                     text: currentText.trim(),
                     start: currentStartTime,
                     duration: actualDuration
-                });
+                };
+                result.push(combinedItem);
+                // Reset for new group
                 currentStartTime = -1;
                 currentEndTime = -1;
                 currentText = '';
             }
         }
-        // Handle any remaining segments
+        // Handle remaining items that didn't reach minimum duration
         if (currentStartTime !== -1) {
-            result.push({
+            const actualDuration = currentEndTime - currentStartTime;
+            const combinedItem = {
                 text: currentText.trim(),
                 start: currentStartTime,
-                duration: currentEndTime - currentStartTime
-            });
+                duration: actualDuration
+            };
+            result.push(combinedItem);
         }
-        console.log(`✅ Combined into ${result.length} segments`);
         return result;
     }
     async createEmbeddingsFromSubtitles(subtitleData, videoName, videoLink, collectionName, options = {}) {

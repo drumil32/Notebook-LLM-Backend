@@ -1,6 +1,6 @@
 export interface TranscriptSegment {
     text: string;
-    offset: number;
+    start: number;
     duration: number;
 }
 export interface CombinedTranscriptSegment {
