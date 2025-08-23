@@ -3,6 +3,7 @@ import { OpenAI } from 'openai';
 import { KnowledgeBaseData } from "./knowledgeBase";
 import { config } from "../config";
 import { QdrantVectorStore } from "@langchain/qdrant";
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 
 export interface AIResponse {
   content: string;
@@ -16,7 +17,7 @@ export interface ChatMessage {
 }
 
 class KnowledgeBaseAI {
-  private readonly embeddings: OpenAIEmbeddings;
+  private readonly embeddings: GoogleGenerativeAIEmbeddings;
   private readonly openaiClient: OpenAI;
 
   private readonly systemPrompts = {
@@ -34,14 +35,19 @@ Be concise and accurate in your responses.`,
 
     youtube: `You are an AI assistant who provides answers based on the available context from YouTube video transcripts. 
 You must stay strictly within the provided context. When answering user queries, always mention the video source and timestamp when possible.
-Be concise and accurate in your responses, and note that this information comes from a YouTube video.`
+Be concise and accurate in your responses. Note that this information comes from a YouTube video and share the timestamped video link from the metadata (found under "timestampedVideoLink")`
   };
 
   constructor() {
-    this.embeddings = new OpenAIEmbeddings({
-      apiKey: config.openaiApiKey,
-      batchSize: 512,
-      model: 'text-embedding-3-large',
+    // this.embeddings = new OpenAIEmbeddings({
+    //   apiKey: config.openaiApiKey,
+    //   batchSize: 512,
+    //   model: 'text-embedding-3-large',
+    // });
+
+    this.embeddings = new GoogleGenerativeAIEmbeddings({
+      apiKey: config.googleApiKey,
+      model: "text-embedding-004"
     });
 
     this.openaiClient = new OpenAI({
