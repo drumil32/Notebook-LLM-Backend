@@ -11,6 +11,7 @@ const knowledgeBase_1 = __importDefault(require("./routes/knowledgeBase"));
 const chat_1 = __importDefault(require("./routes/chat"));
 const courseChat_1 = __importDefault(require("./routes/courseChat"));
 const origin_validation_1 = require("./middleware/origin-validation");
+const apiTracker_1 = require("./middleware/apiTracker");
 const app = (0, express_1.default)();
 // Trust proxy for proper IP detection (important for rate limiting)
 // Trust all proxies (nginx reverse proxy)
@@ -28,6 +29,8 @@ app.use((req, res, next) => {
     console.log(`🌐 ${req.method} ${req.path} - ${new Date().toISOString()}`);
     next();
 });
+// Track API invocation counts with 7-day expiry
+app.use((0, apiTracker_1.apiTracker)());
 app.use(origin_validation_1.validateOrigin);
 app.get('/', async (req, res) => {
     // rate_limit:${endpointName}:${ip}

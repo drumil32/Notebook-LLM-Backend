@@ -13,6 +13,7 @@ declare class RedisService {
     keys(pattern: string): Promise<string[]>;
     getKeys(pattern: string): Promise<string[]>;
     ttl(key: string): Promise<number>;
+    increment(key: string, ttl?: number): Promise<number>;
     flushAll(): Promise<void>;
     getClient(): RedisClientType;
     isClientConnected(): boolean;
