@@ -114,6 +114,20 @@ class RedisService {
     return await this.client.ttl(key);
   }
 
+  async increment(key: string, ttl?: number): Promise<number> {
+    if (!this.isConnected) {
+      throw new Error('Redis client is not connected');
+    }
+    
+    const result = await this.client.incr(key);
+    
+    if (ttl && result === 1) {
+      await this.client.expire(key, ttl);
+    }
+    
+    return result;
+  }
+
   async flushAll(): Promise<void> {
     if (!this.isConnected) {
       throw new Error('Redis client is not connected');
