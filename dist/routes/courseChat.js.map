@@ -1,1 +1,0 @@
-{"version":3,"file":"courseChat.js","sourceRoot":"","sources":["../../src/routes/courseChat.ts"],"names":[],"mappings":";;AAAA,qCAAiC;AACjC,2DAA+E;AAC/E,0DAAiE;AAEjE,MAAM,MAAM,GAA8B,IAAA,gBAAM,GAAE,CAAC;AAEnD,MAAM,CAAC,IAAI,CAAC,GAAG,EAAE,iCAAmB,EAAE,iCAAoB,CAAC,IAAI,CAAC,IAAI,CAAC,iCAAoB,CAAC,CAAC,CAAC;AAE5F,kBAAe,MAAM,CAAC"}
