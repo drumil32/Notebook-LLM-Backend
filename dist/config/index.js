@@ -15,7 +15,9 @@ const requiredEnvVars = [
     'QDRANT_URL',
     'QDRANT_API_KEY',
     'OPENAI_API_KEY',
-    'GOOGLE_API_KEY'
+    'GOOGLE_API_KEY',
+    'FRONTEND_URL1',
+    'FRONTEND_URL2'
 ];
 function validateEnvVars() {
     const missingVars = [];
@@ -41,7 +43,9 @@ function validateEnvVars() {
         qdrantUrl: process.env.QDRANT_URL,
         qdrantApiKey: process.env.QDRANT_API_KEY,
         openaiApiKey: process.env.OPENAI_API_KEY,
-        googleApiKey: process.env.GOOGLE_API_KEY
+        googleApiKey: process.env.GOOGLE_API_KEY,
+        frontendUrl1: process.env.FRONTEND_URL1,
+        frontendUrl2: process.env.FRONTEND_URL2
     };
 }
 exports.config = validateEnvVars();

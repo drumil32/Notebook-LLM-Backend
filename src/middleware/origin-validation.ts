@@ -4,6 +4,8 @@ import { config } from '../config';
 
 export const getClientIp = (req: Request): string => {
   // Check various headers for the real client IP
+  console.log(`x-real-ip ${req.get('X-Real-IP')}`);
+  console.log(`x-forwarded-for ${req.get('X-Forwarded-For')}`);
   return req.get('X-Real-IP') ||
          req.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
          req.ip ||

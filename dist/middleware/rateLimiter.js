@@ -1,16 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.chatRateLimit = exports.knowledgeBaseRateLimit = exports.createRateLimiter = void 0;
+exports.courseChatRateLimit = exports.chatRateLimit = exports.knowledgeBaseRateLimit = exports.createRateLimiter = void 0;
 const redis_1 = require("../services/redis");
+const origin_validation_1 = require("./origin-validation");
 const createRateLimiter = ({ maxRequests, windowMs, endpointName }) => {
     return async (req, res, next) => {
         try {
             // Get IP address
-            const ip = req.get('X-Real-IP') ||
-                req.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
-                req.ip ||
-                req.connection.remoteAddress ||
-                'unknown';
+            const ip = (0, origin_validation_1.getClientIp)(req);
             // Skip rate limiting for localhost in development
             // if (process.env.NODE_ENV === 'development' && (ip === '127.0.0.1' || ip === '::1')) {
             //   return next();
@@ -63,11 +60,16 @@ exports.createRateLimiter = createRateLimiter;
 exports.knowledgeBaseRateLimit = (0, exports.createRateLimiter)({
     maxRequests: 50,
     windowMs: 24 * 60 * 60 * 1000, // 24 hours
-    endpointName: 'adding new knowlodge base'
+    endpointName: 'adding new knowledge base'
 });
 exports.chatRateLimit = (0, exports.createRateLimiter)({
     maxRequests: 30,
     windowMs: 24 * 60 * 60 * 1000, // 24 hours  
     endpointName: 'chat'
+});
+exports.courseChatRateLimit = (0, exports.createRateLimiter)({
+    maxRequests: 30,
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    endpointName: 'course chat'
 });
 //# sourceMappingURL=rateLimiter.js.map

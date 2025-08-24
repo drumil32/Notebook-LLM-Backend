@@ -12,13 +12,14 @@ const chat_1 = __importDefault(require("./routes/chat"));
 const courseChat_1 = __importDefault(require("./routes/courseChat"));
 const app = (0, express_1.default)();
 // Trust proxy for proper IP detection (important for rate limiting)
-app.set('trust proxy', 'loopback');
-// Enable CORS for all routes and origins
+// Trust all proxies (nginx reverse proxy)
+app.set('trust proxy', true);
+// Enable CORS for specific frontend URLs
 app.use((0, cors_1.default)({
-    origin: '*',
+    origin: [config_1.config.frontendUrl1, config_1.config.frontendUrl2],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: false
+    // credentials: true
 }));
 app.use(express_1.default.json());
 // Add middleware to log all requests

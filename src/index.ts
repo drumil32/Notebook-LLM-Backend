@@ -9,7 +9,8 @@ import courseChatRoutes from './routes/courseChat';
 const app = express();
 
 // Trust proxy for proper IP detection (important for rate limiting)
-app.set('trust proxy', 'loopback');
+// Trust all proxies (nginx reverse proxy)
+app.set('trust proxy', true);
 
 // Enable CORS for specific frontend URLs
 app.use(cors({

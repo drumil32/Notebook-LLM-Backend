@@ -8,6 +8,8 @@ interface Config {
     qdrantApiKey: string;
     openaiApiKey: string;
     googleApiKey: string;
+    frontendUrl1: string;
+    frontendUrl2: string;
 }
 export declare const config: Config;
 export {};
