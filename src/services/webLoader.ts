@@ -1,9 +1,9 @@
 import { PuppeteerWebBaseLoader } from '@langchain/community/document_loaders/web/puppeteer';
-import { OpenAIEmbeddings } from '@langchain/openai';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import puppeteer from 'puppeteer';
 import { config } from '../config';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 
 export interface WebProcessingResult {
   success: boolean;
@@ -21,14 +21,19 @@ export interface WebProcessingOptions {
 }
 
 class WebLoaderService {
-  private embeddings: OpenAIEmbeddings;
+  private readonly embeddings: GoogleGenerativeAIEmbeddings;
   private textSplitter: RecursiveCharacterTextSplitter;
 
   constructor() {
-    this.embeddings = new OpenAIEmbeddings({
-      apiKey: config.openaiApiKey,
-      batchSize: 512,
-      model: 'text-embedding-3-large',
+    // this.embeddings = new OpenAIEmbeddings({
+    //   apiKey: config.openaiApiKey,
+    //   batchSize: 512,
+    //   model: 'text-embedding-3-large',
+    // });
+
+    this.embeddings = new GoogleGenerativeAIEmbeddings({
+      apiKey: config.googleApiKey,
+      model: "text-embedding-004"
     });
 
     this.textSplitter = new RecursiveCharacterTextSplitter({

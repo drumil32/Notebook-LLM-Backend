@@ -28,7 +28,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+  // rate_limit:${endpointName}:${ip}
+  // await redisService.set('rate_limit:chat:::ffff:127.0.0.1', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
+  // await redisService.set('rate_limit:adding new knowlodge base:::ffff:127.0.0.1', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
   res.json({ message: 'Hello World!' });
 });
 

@@ -1,7 +1,8 @@
 import { WebPDFLoader } from '@langchain/community/document_loaders/web/pdf';
-import { OpenAIEmbeddings } from '@langchain/openai';
+// import { OpenAIEmbeddings } from '@langchain/openai';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { config } from '../config';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 
 export interface PDFProcessingResult {
   success: boolean;
@@ -12,13 +13,17 @@ export interface PDFProcessingResult {
 }
 
 class PDFLoaderService {
-  private readonly embeddings: OpenAIEmbeddings;
+  private readonly embeddings: GoogleGenerativeAIEmbeddings;;
 
   constructor() {
-    this.embeddings = new OpenAIEmbeddings({
-      apiKey: config.openaiApiKey,
-      batchSize: 512,
-      model: 'text-embedding-3-large',
+    // this.embeddings = new OpenAIEmbeddings({
+    //   apiKey: config.openaiApiKey,
+    //   batchSize: 512,
+    //   model: 'text-embedding-3-large',
+    // });
+    this.embeddings = new GoogleGenerativeAIEmbeddings({
+      apiKey: config.googleApiKey,
+      model: "text-embedding-004"
     });
   }
 

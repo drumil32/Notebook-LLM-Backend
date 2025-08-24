@@ -1,9 +1,8 @@
-import { OpenAIEmbeddings } from "@langchain/openai";
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { OpenAI } from 'openai';
 import { KnowledgeBaseData } from "./knowledgeBase";
 import { config } from "../config";
 import { QdrantVectorStore } from "@langchain/qdrant";
-import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 
 export interface AIResponse {
   content: string;
