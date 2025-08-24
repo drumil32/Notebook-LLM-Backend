@@ -25,6 +25,7 @@ export const createRateLimiter = ({ maxRequests, windowMs, endpointName }: RateL
 
       // Get current count for this IP
       const currentCountStr = await redisService.get(key);
+      
       const currentCount = currentCountStr ? parseInt(currentCountStr) : 0;
 
       if (currentCount >= maxRequests) {
