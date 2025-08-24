@@ -53,7 +53,7 @@ export class CourseChatController {
       );
 
       const retriever = vectorStore.asRetriever({
-        k: 3,
+        k: 5,
       });
 
       const relevantChunks = await retriever.invoke(message);
