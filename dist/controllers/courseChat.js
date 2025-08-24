@@ -11,7 +11,6 @@ const courses = ['NodeJs', 'Python'];
 class CourseChatController {
     constructor() {
         this.CHAT_HISTORY_TTL = 3600; // 5 minutes
-        console.log('ran constructor');
         this.embeddings = new google_genai_1.GoogleGenerativeAIEmbeddings({
             apiKey: config_1.config.googleApiKey,
             model: "text-embedding-004"

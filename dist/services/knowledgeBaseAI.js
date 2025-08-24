@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.knowledgeBaseAI = void 0;
+const google_genai_1 = require("@langchain/google-genai");
 const openai_1 = require("openai");
 const config_1 = require("../config");
 const qdrant_1 = require("@langchain/qdrant");
-const google_genai_1 = require("@langchain/google-genai");
 class KnowledgeBaseAI {
     constructor() {
         // this.embeddings = new OpenAIEmbeddings({

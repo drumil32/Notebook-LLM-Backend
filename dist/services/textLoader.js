@@ -2,16 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.textLoaderService = void 0;
 const documents_1 = require("@langchain/core/documents");
-const openai_1 = require("@langchain/openai");
+// import { OpenAIEmbeddings } from '@langchain/openai';
 const qdrant_1 = require("@langchain/qdrant");
 const textsplitters_1 = require("@langchain/textsplitters");
 const config_1 = require("../config");
+const google_genai_1 = require("@langchain/google-genai");
 class TextLoaderService {
     constructor() {
-        this.embeddings = new openai_1.OpenAIEmbeddings({
-            apiKey: config_1.config.openaiApiKey,
-            batchSize: 512,
-            model: 'text-embedding-3-large',
+        // this.embeddings = new OpenAIEmbeddings({
+        //   apiKey: config.openaiApiKey,
+        //   batchSize: 512,
+        //   model: 'text-embedding-3-large',
+        // });
+        this.embeddings = new google_genai_1.GoogleGenerativeAIEmbeddings({
+            apiKey: config_1.config.googleApiKey,
+            model: "text-embedding-004"
         });
         this.textSplitter = new textsplitters_1.RecursiveCharacterTextSplitter({
             chunkSize: 1000,

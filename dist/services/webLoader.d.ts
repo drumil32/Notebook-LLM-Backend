@@ -12,7 +12,7 @@ export interface WebProcessingOptions {
     crawlDepth?: 'single' | 'site';
 }
 declare class WebLoaderService {
-    private embeddings;
+    private readonly embeddings;
     private textSplitter;
     constructor();
     private discoverLinks;
