@@ -15,6 +15,7 @@ const getClientIp = (req) => {
 exports.getClientIp = getClientIp;
 const validateOrigin = (req, res, next) => {
     const origin = req.get('Origin') || req.get('Referer');
+    console.log(origin);
     // Skip validation for requests without origin (like direct API calls)
     if (!origin) {
         console.warn('⚠️ Request without origin header - allowing');
