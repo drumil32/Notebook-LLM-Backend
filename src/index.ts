@@ -6,6 +6,7 @@ import knowledgeBaseRoutes from './routes/knowledgeBase';
 import chatRoutes from './routes/chat';
 import courseChatRoutes from './routes/courseChat';
 import { validateOrigin } from './middleware/origin-validation';
+import { apiTracker } from './middleware/apiTracker';
 
 const app = express();
 
@@ -29,6 +30,10 @@ app.use((req, res, next) => {
   console.log(`🌐 ${req.method} ${req.path} - ${new Date().toISOString()}`);
   next();
 });
+
+// Track API invocation counts with 7-day expiry
+app.use(apiTracker());
+
 app.use(validateOrigin);
 app.get('/', async (req, res) => {
   // rate_limit:${endpointName}:${ip}
