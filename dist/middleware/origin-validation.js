@@ -14,12 +14,18 @@ const getClientIp = (req) => {
 };
 exports.getClientIp = getClientIp;
 const validateOrigin = (req, res, next) => {
+    if (config_1.config.nodeEnv === 'development') {
+        console.warn('⚠️ Development mode - allowing all origins');
+        return next();
+    }
     const origin = req.get('Origin') || req.get('Referer');
-    console.log(origin);
     // Skip validation for requests without origin (like direct API calls)
     if (!origin) {
         console.warn('⚠️ Request without origin header - allowing');
-        return next();
+        return res.status(403).json({
+            error: 'Forbidden',
+            message: 'Origin not allowed'
+        });
     }
     const ip = (0, exports.getClientIp)(req);
     // Extract the origin from referer if needed
