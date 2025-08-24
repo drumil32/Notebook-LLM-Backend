@@ -84,3 +84,8 @@ export const chatRateLimit = createRateLimiter({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours  
   endpointName: 'chat'
 });
+export const courseChatRateLimit = createRateLimiter({
+  maxRequests: 30,
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  endpointName: 'course chat'
+});
