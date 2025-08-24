@@ -5,6 +5,7 @@ import { redisService } from './services/redis';
 import knowledgeBaseRoutes from './routes/knowledgeBase';
 import chatRoutes from './routes/chat';
 import courseChatRoutes from './routes/courseChat';
+import { validateOrigin } from './middleware/origin-validation';
 
 const app = express();
 
@@ -28,7 +29,7 @@ app.use((req, res, next) => {
   console.log(`🌐 ${req.method} ${req.path} - ${new Date().toISOString()}`);
   next();
 });
-
+app.use(validateOrigin);
 app.get('/', async (req, res) => {
   // rate_limit:${endpointName}:${ip}
   // await redisService.set('rate_limit:chat:::ffff:127.0.0.1', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
