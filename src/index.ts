@@ -11,12 +11,12 @@ const app = express();
 // Trust proxy for proper IP detection (important for rate limiting)
 app.set('trust proxy', 'loopback');
 
-// Enable CORS for all routes and origins
+// Enable CORS for specific frontend URLs
 app.use(cors({
-  origin: '*',
+  origin: [config.frontendUrl1, config.frontendUrl2],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false
+  // credentials: true
 }));
 
 app.use(express.json());
