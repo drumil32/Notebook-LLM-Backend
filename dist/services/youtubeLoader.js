@@ -215,10 +215,10 @@ class YouTubeLoaderService {
                 resp = await axios_1.default.get(`http://localhost:3010/captions/${encodeURIComponent(videoUrl)}`);
             }
             catch (error) {
-                console.log(error.message);
+                console.error('❌ Error fetching transcript from local API:', error.response.data.error);
                 return {
                     success: false,
-                    error: error.message
+                    error: error.response.data.error
                 };
             }
             const docs = resp.data.snippets;

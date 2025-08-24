@@ -44,7 +44,7 @@ class CourseChatController {
                 collectionName: `chai-or-code-${courseName.toLowerCase()}`,
             });
             const retriever = vectorStore.asRetriever({
-                k: 3,
+                k: 5,
             });
             const relevantChunks = await retriever.invoke(message);
             const stringToken = await redis_1.redisService.get(token);
