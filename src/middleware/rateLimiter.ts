@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { redisService } from '../services/redis';
+import { getClientIp } from './origin-validation';
 
 interface RateLimiterConfig {
   maxRequests: number;
@@ -11,11 +12,7 @@ export const createRateLimiter = ({ maxRequests, windowMs, endpointName }: RateL
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Get IP address
-      const ip = req.get('X-Real-IP') || 
-                 req.get('X-Forwarded-For')?.split(',')[0]?.trim() || 
-                 req.ip || 
-                 req.connection.remoteAddress || 
-                 'unknown';
+      const ip = getClientIp(req);
 
       // Skip rate limiting for localhost in development
       // if (process.env.NODE_ENV === 'development' && (ip === '127.0.0.1' || ip === '::1')) {
@@ -77,11 +74,16 @@ export const createRateLimiter = ({ maxRequests, windowMs, endpointName }: RateL
 export const knowledgeBaseRateLimit = createRateLimiter({
   maxRequests: 50,
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  endpointName: 'adding new knowlodge base'
+  endpointName: 'adding new knowledge base'
 });
 
 export const chatRateLimit = createRateLimiter({
   maxRequests: 30,
   windowMs: 24 * 60 * 60 * 1000, // 24 hours  
   endpointName: 'chat'
+});
+export const courseChatRateLimit = createRateLimiter({
+  maxRequests: 30,
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  endpointName: 'course chat'
 });
