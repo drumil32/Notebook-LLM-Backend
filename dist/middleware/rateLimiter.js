@@ -23,6 +23,7 @@ const createRateLimiter = ({ maxRequests, windowMs, endpointName }) => {
             const currentCount = currentCountStr ? parseInt(currentCountStr) : 0;
             if (currentCount >= maxRequests) {
                 // Rate limit exceeded
+                console.warn(`⚠️ Rate limit exceeded - IP: ${ip}, Endpoint: ${endpointName}`);
                 const ttl = await redis_1.redisService.getClient().ttl(key);
                 const resetTime = new Date(now + (ttl * 1000)).toISOString();
                 return res.status(429).json({

@@ -32,6 +32,7 @@ export const createRateLimiter = ({ maxRequests, windowMs, endpointName }: RateL
 
       if (currentCount >= maxRequests) {
         // Rate limit exceeded
+        console.warn(`⚠️ Rate limit exceeded - IP: ${ip}, Endpoint: ${endpointName}`);
         const ttl = await redisService.getClient().ttl(key);
         const resetTime = new Date(now + (ttl * 1000)).toISOString();
 
