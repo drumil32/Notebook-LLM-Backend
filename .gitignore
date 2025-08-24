@@ -10,7 +10,7 @@ pnpm-lock.yaml
 .env.production.local
 docker-compose.yml
 # Build output
-dist/
+# dist/
 build/
 
 # Logs
