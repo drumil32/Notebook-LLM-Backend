@@ -10,7 +10,6 @@ export class CourseChatController {
   private readonly CHAT_HISTORY_TTL = 3600; // 5 minutes
   private readonly embeddings: GoogleGenerativeAIEmbeddings;
   constructor() {
-    console.log('ran constructor');
     this.embeddings = new GoogleGenerativeAIEmbeddings({
       apiKey: config.googleApiKey,
       model: "text-embedding-004"

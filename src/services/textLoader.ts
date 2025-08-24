@@ -1,8 +1,9 @@
 import { Document } from '@langchain/core/documents';
-import { OpenAIEmbeddings } from '@langchain/openai';
+// import { OpenAIEmbeddings } from '@langchain/openai';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { config } from '../config';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 
 export interface TextProcessingResult {
   success: boolean;
@@ -13,16 +14,19 @@ export interface TextProcessingResult {
 }
 
 class TextLoaderService {
-  private readonly embeddings: OpenAIEmbeddings;
+  private readonly embeddings: GoogleGenerativeAIEmbeddings;
   private readonly textSplitter: RecursiveCharacterTextSplitter;
 
   constructor() {
-    this.embeddings = new OpenAIEmbeddings({
-      apiKey: config.openaiApiKey,
-      batchSize: 512,
-      model: 'text-embedding-3-large',
+    // this.embeddings = new OpenAIEmbeddings({
+    //   apiKey: config.openaiApiKey,
+    //   batchSize: 512,
+    //   model: 'text-embedding-3-large',
+    // });
+   this.embeddings = new GoogleGenerativeAIEmbeddings({
+      apiKey: config.googleApiKey,
+      model: "text-embedding-004"
     });
-
     this.textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 1000,
       chunkOverlap: 200,
