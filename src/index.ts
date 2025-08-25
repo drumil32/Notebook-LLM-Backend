@@ -37,9 +37,9 @@ app.use(apiTracker());
 app.use(validateOrigin);
 app.get('/', async (req, res) => {
   // rate_limit:${endpointName}:${ip}
-  await redisService.set('rate_limit:chat:103.147.192.94', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
-  await redisService.set('rate_limit:course chat:103.147.192.94', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
-  await redisService.set('rate_limit:adding new knowlodge base:103.147.192.94', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
+  await redisService.set('rate_limit:chat:::1', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
+  await redisService.set('rate_limit:course chat:::1', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
+  await redisService.set('rate_limit:adding new knowlodge base:::1', '0', Math.ceil(24 * 60 * 60 * 1000 / 1000));
   res.json({ message: 'Hello World!' });
 });
 
